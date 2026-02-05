@@ -1,0 +1,13 @@
+{
+  "domain": "ha_heat_calculator",
+  "name": "HA Heat Calculator",
+  "version": "0.1.0",
+  "documentation": "https://github.com/example/ha-heat-calculator",
+  "issue_tracker": "https://github.com/example/ha-heat-calculator/issues",
+  "dependencies": [],
+  "codeowners": [
+    "@maintainer"
+  ],
+  "config_flow": true,
+  "iot_class": "calculated"
+}
