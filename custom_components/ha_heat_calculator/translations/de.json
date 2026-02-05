@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA Heat Calculator",
+        "description": "Konfiguriere die Gasverbrauchsaufteilung auf deine Heizungen.",
+        "data": {
+          "gas_meter_entity": "Gaszähler Entität",
+          "heaters": "Heizungs-Entitäten",
+          "include_warm_water": "Warmwasser läuft über dieselbe Gastherme",
+          "warm_water_percent": "Warmwasser-Anteil in Prozent",
+          "calculation_method": "Berechnungsmethode"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA Heat Calculator Optionen",
+        "data": {
+          "gas_meter_entity": "Gaszähler Entität",
+          "heaters": "Heizungs-Entitäten",
+          "include_warm_water": "Warmwasser läuft über dieselbe Gastherme",
+          "warm_water_percent": "Warmwasser-Anteil in Prozent",
+          "calculation_method": "Berechnungsmethode"
+        }
+      }
+    }
+  },
+  "selector": {
+    "calculation_method": {
+      "options": {
+        "runtime_only": "Nur Laufzeit",
+        "runtime_temp_weighted": "Laufzeit mit Temperaturgewichtung"
+      }
+    }
+  }
+}

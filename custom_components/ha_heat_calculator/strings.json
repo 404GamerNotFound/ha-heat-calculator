@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA Heat Calculator",
+        "description": "Configure gas usage allocation for your heaters.",
+        "data": {
+          "gas_meter_entity": "Gas meter entity",
+          "heaters": "Heater entities",
+          "include_warm_water": "Warm water runs on the same gas boiler",
+          "warm_water_percent": "Warm water gas percentage",
+          "calculation_method": "Calculation method"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA Heat Calculator options",
+        "data": {
+          "gas_meter_entity": "Gas meter entity",
+          "heaters": "Heater entities",
+          "include_warm_water": "Warm water runs on the same gas boiler",
+          "warm_water_percent": "Warm water gas percentage",
+          "calculation_method": "Calculation method"
+        }
+      }
+    }
+  },
+  "selector": {
+    "calculation_method": {
+      "options": {
+        "runtime_only": "Runtime only",
+        "runtime_temp_weighted": "Runtime with temperature weighting"
+      }
+    }
+  }
+}
