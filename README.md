@@ -1,16 +1,16 @@
 # HA Heat Calculator (HACS Integration)
 
-A Home Assistant custom integration that distributes total gas usage from one gas meter across multiple heater entities.
+A Home Assistant custom integration that distributes total gas usage from one gas meter across multiple heater entities and exposes fully managed integration entities (no helper entities required).
 
 ## Features
 
 - Select one gas meter entity (`sensor.*`).
 - Select multiple heater entities (`climate.*`).
-- Optional warm-water correction:
-  - Toggle whether warm water uses the same gas boiler.
-  - Define a warm-water percentage that is subtracted before heater distribution.
+- Optional warm-water correction, managed directly by integration entities:
+  - Switch entity to toggle whether warm water uses the same gas boiler.
+  - Number entity to set a warm-water percentage subtracted before heater distribution.
 - Per-heater output sensor with allocated gas consumption.
-- Two allocation methods:
+- Two allocation methods via integration select entity:
   - **Runtime only**
   - **Runtime with temperature weighting** (higher demand gets more weight)
 
