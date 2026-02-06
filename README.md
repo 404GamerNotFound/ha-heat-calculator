@@ -13,6 +13,7 @@ A Home Assistant custom integration that distributes total gas usage from one ga
 - Two allocation methods via integration select entity:
   - **Runtime only**
   - **Runtime with temperature weighting** (higher demand gets more weight)
+- Built-in diagnostics panel with runtime state and last allocation details.
 
 ## How calculation works
 
