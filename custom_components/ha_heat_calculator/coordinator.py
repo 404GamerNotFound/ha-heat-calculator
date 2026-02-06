@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -25,6 +26,8 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+MIN_WARM_WATER_PERCENT = 0.0
+MAX_WARM_WATER_PERCENT = 100.0
 
 
 @dataclass
@@ -74,7 +77,7 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
                 entry.data.get(CONF_INCLUDE_WARM_WATER, DEFAULT_INCLUDE_WARM_WATER),
             )
         )
-        self.warm_water_percent = float(
+        self.warm_water_percent = self._sanitize_warm_water_percent(
             entry.options.get(
                 CONF_WARM_WATER_PERCENT,
                 entry.data.get(CONF_WARM_WATER_PERCENT, DEFAULT_WARM_WATER_PERCENT),
@@ -97,6 +100,17 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
         self.hass.config_entries.async_update_entry(self.config_entry, options=new_options)
         self._apply_config()
         self.async_update_listeners()
+        await self.async_request_refresh()
+
+    @staticmethod
+    def _sanitize_warm_water_percent(value: Any) -> float:
+        """Convert and clamp the warm-water share to a safe percentage range."""
+        try:
+            percent = float(value)
+        except (TypeError, ValueError):
+            return DEFAULT_WARM_WATER_PERCENT
+
+        return min(MAX_WARM_WATER_PERCENT, max(MIN_WARM_WATER_PERCENT, percent))
 
     async def _async_update_data(self) -> dict[str, HeaterStats]:
         """Collect heating effort and distribute gas increments."""
@@ -179,7 +193,7 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
             return False
 
     @staticmethod
-    def _temperature_weight(attributes: dict) -> float:
+    def _temperature_weight(attributes: dict[str, Any]) -> float:
         """Return a weighting factor derived from target/current temperature."""
         current_temperature = attributes.get("current_temperature")
         target_temperature = attributes.get("temperature")
