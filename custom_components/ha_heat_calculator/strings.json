@@ -12,6 +12,9 @@
           "calculation_method": "Calculation method"
         }
       }
+    },
+    "error": {
+      "at_least_one_heater": "Please select at least one heater entity."
     }
   },
   "options": {
@@ -26,6 +29,9 @@
           "calculation_method": "Calculation method"
         }
       }
+    },
+    "error": {
+      "at_least_one_heater": "Please select at least one heater entity."
     }
   },
   "selector": {

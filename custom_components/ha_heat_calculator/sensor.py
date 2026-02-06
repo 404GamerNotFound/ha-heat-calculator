@@ -56,10 +56,17 @@ class HeaterGasShareSensor(CoordinatorEntity[HeatCalculatorCoordinator], SensorE
         return round(self.coordinator.data[self._heater_entity_id].total_allocated, 3)
 
     @property
-    def extra_state_attributes(self) -> dict[str, str]:
+    def extra_state_attributes(self) -> dict[str, str | float | None]:
         """Return additional metadata for transparency."""
         return {
             "heater_entity": self._heater_entity_id,
             "gas_meter_entity": self.coordinator.gas_meter_entity_id,
             "calculation_method": self.coordinator.calculation_method,
+            "effort_window": round(self.coordinator.data[self._heater_entity_id].effort_window, 3),
+            "last_delta_gas": round(self.coordinator.last_delta_gas, 6),
+            "last_distributable_gas": round(self.coordinator.last_distributable_gas, 6),
+            "last_warm_water_deducted": round(self.coordinator.last_warm_water_deducted, 6),
+            "last_distribution_time": None
+            if self.coordinator.last_distribution_time is None
+            else self.coordinator.last_distribution_time.isoformat(),
         }
