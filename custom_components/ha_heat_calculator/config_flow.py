@@ -7,6 +7,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
+from homeassistant.helpers.selector import SelectSelectorConfig
 
 from .const import (
     CALCULATION_METHODS,
@@ -29,10 +30,19 @@ class HeatCalculatorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input=None):
         """Handle the initial setup step."""
-        if user_input is not None:
-            return self.async_create_entry(title="Heat Calculator", data=user_input)
+        errors: dict[str, str] = {}
 
-        return self.async_show_form(step_id="user", data_schema=self._build_schema())
+        if user_input is not None:
+            if not user_input.get(CONF_HEATERS):
+                errors[CONF_HEATERS] = "at_least_one_heater"
+            else:
+                return self.async_create_entry(title="Heat Calculator", data=user_input)
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=self._build_schema(user_input),
+            errors=errors,
+        )
 
     @staticmethod
     def _build_schema(defaults: dict | None = None) -> vol.Schema:
@@ -73,8 +83,10 @@ class HeatCalculatorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_CALCULATION_METHOD, DEFAULT_CALCULATION_METHOD
                     ),
                 ): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=list(CALCULATION_METHODS.keys()), mode="dropdown"
+                    SelectSelectorConfig(
+                        options=list(CALCULATION_METHODS.keys()),
+                        mode="dropdown",
+                        translation_key=CONF_CALCULATION_METHOD,
                     )
                 ),
             }
@@ -97,12 +109,18 @@ class HeatCalculatorOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         """Manage options."""
-        if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+        errors: dict[str, str] = {}
 
-        defaults = {**self.config_entry.data, **self.config_entry.options}
+        if user_input is not None:
+            if not user_input.get(CONF_HEATERS):
+                errors[CONF_HEATERS] = "at_least_one_heater"
+            else:
+                return self.async_create_entry(title="", data=user_input)
+
+        defaults = user_input or {**self.config_entry.data, **self.config_entry.options}
         return self.async_show_form(
             step_id="init",
             data_schema=HeatCalculatorConfigFlow._build_schema(defaults),
+            errors=errors,
         )
 

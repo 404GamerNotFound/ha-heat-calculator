@@ -46,6 +46,10 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
 
         self._last_sample_time: datetime | None = None
         self._last_gas_value: float | None = None
+        self.last_delta_gas: float = 0.0
+        self.last_distributable_gas: float = 0.0
+        self.last_warm_water_deducted: float = 0.0
+        self.last_distribution_time: datetime | None = None
 
         super().__init__(
             hass,
@@ -191,9 +195,20 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
 
     def _distribute_gas(self, delta_gas: float) -> None:
         """Distribute a gas meter delta to all configured heaters."""
+        if not self.data:
+            self.last_delta_gas = delta_gas
+            self.last_distributable_gas = 0.0
+            self.last_warm_water_deducted = 0.0
+            self.last_distribution_time = dt_util.utcnow()
+            return
+
         distributable = delta_gas
+        self.last_delta_gas = delta_gas
         if self.include_warm_water:
             distributable = delta_gas * (1 - (self.warm_water_percent / 100.0))
+        self.last_distributable_gas = distributable
+        self.last_warm_water_deducted = max(delta_gas - distributable, 0.0)
+        self.last_distribution_time = dt_util.utcnow()
 
         if distributable <= 0:
             self._reset_effort_window()
