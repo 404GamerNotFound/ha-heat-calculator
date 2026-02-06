@@ -43,24 +43,6 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Initialize coordinator."""
         self.config_entry = entry
-        self.gas_meter_entity_id: str = entry.options.get(
-            CONF_GAS_METER_ENTITY, entry.data[CONF_GAS_METER_ENTITY]
-        )
-        self.heaters: list[str] = entry.options.get(CONF_HEATERS, entry.data[CONF_HEATERS])
-        self.include_warm_water: bool = entry.options.get(
-            CONF_INCLUDE_WARM_WATER,
-            entry.data.get(CONF_INCLUDE_WARM_WATER, DEFAULT_INCLUDE_WARM_WATER),
-        )
-        self.warm_water_percent: float = float(
-            entry.options.get(
-                CONF_WARM_WATER_PERCENT,
-                entry.data.get(CONF_WARM_WATER_PERCENT, DEFAULT_WARM_WATER_PERCENT),
-            )
-        )
-        self.calculation_method: str = entry.options.get(
-            CONF_CALCULATION_METHOD,
-            entry.data.get(CONF_CALCULATION_METHOD, DEFAULT_CALCULATION_METHOD),
-        )
 
         self._last_sample_time: datetime | None = None
         self._last_gas_value: float | None = None
@@ -73,7 +55,44 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
             update_interval=timedelta(seconds=UPDATE_INTERVAL_SECONDS),
         )
 
-        self.data = {entity_id: HeaterStats() for entity_id in self.heaters}
+        self._apply_config()
+
+    def _apply_config(self) -> None:
+        """Load and apply current config/option values."""
+        entry = self.config_entry
+        self.gas_meter_entity_id = entry.options.get(
+            CONF_GAS_METER_ENTITY, entry.data[CONF_GAS_METER_ENTITY]
+        )
+        self.heaters = entry.options.get(CONF_HEATERS, entry.data[CONF_HEATERS])
+        self.include_warm_water = bool(
+            entry.options.get(
+                CONF_INCLUDE_WARM_WATER,
+                entry.data.get(CONF_INCLUDE_WARM_WATER, DEFAULT_INCLUDE_WARM_WATER),
+            )
+        )
+        self.warm_water_percent = float(
+            entry.options.get(
+                CONF_WARM_WATER_PERCENT,
+                entry.data.get(CONF_WARM_WATER_PERCENT, DEFAULT_WARM_WATER_PERCENT),
+            )
+        )
+        self.calculation_method = entry.options.get(
+            CONF_CALCULATION_METHOD,
+            entry.data.get(CONF_CALCULATION_METHOD, DEFAULT_CALCULATION_METHOD),
+        )
+
+        existing = getattr(self, "data", {})
+        self.data = {
+            entity_id: HeaterStats(total_allocated=existing.get(entity_id, HeaterStats()).total_allocated)
+            for entity_id in self.heaters
+        }
+
+    async def async_update_options(self, updates: dict) -> None:
+        """Persist updated options and refresh runtime configuration."""
+        new_options = {**self.config_entry.options, **updates}
+        self.hass.config_entries.async_update_entry(self.config_entry, options=new_options)
+        self._apply_config()
+        self.async_update_listeners()
 
     async def _async_update_data(self) -> dict[str, HeaterStats]:
         """Collect heating effort and distribute gas increments."""
