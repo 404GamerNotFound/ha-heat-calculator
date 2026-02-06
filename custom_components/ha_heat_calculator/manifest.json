@@ -8,7 +8,7 @@
   "codeowners": [
     "@maintainer"
   ],
-  "integration_type": "helper",
+  "integration_type": "integration",
   "config_flow": true,
   "iot_class": "calculated"
 }
