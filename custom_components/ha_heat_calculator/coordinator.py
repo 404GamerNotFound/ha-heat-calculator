@@ -88,7 +88,7 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
             entry.data.get(CONF_CALCULATION_METHOD, DEFAULT_CALCULATION_METHOD),
         )
 
-        existing = getattr(self, "data", {})
+        existing = self.data or {}
         self.data = {
             entity_id: HeaterStats(total_allocated=existing.get(entity_id, HeaterStats()).total_allocated)
             for entity_id in self.heaters
