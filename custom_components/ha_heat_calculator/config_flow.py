@@ -49,39 +49,32 @@ class HeatCalculatorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Build a reusable schema for create/options flow."""
         defaults = defaults or {}
 
+        def _required_key(key: str, fallback=vol.UNDEFINED) -> vol.Required:
+            """Return a required key with an optional default if available."""
+            if key in defaults:
+                return vol.Required(key, default=defaults[key])
+            if fallback is not vol.UNDEFINED:
+                return vol.Required(key, default=fallback)
+            return vol.Required(key)
+
         return vol.Schema(
             {
-                vol.Required(
-                    CONF_GAS_METER_ENTITY,
-                    default=defaults.get(CONF_GAS_METER_ENTITY),
-                ): selector.EntitySelector(
+                _required_key(CONF_GAS_METER_ENTITY): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain=["sensor"], multiple=False)
                 ),
-                vol.Required(
-                    CONF_HEATERS,
-                    default=defaults.get(CONF_HEATERS, []),
-                ): selector.EntitySelector(
+                _required_key(CONF_HEATERS, []): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain=["climate"], multiple=True)
                 ),
-                vol.Required(
-                    CONF_INCLUDE_WARM_WATER,
-                    default=defaults.get(
-                        CONF_INCLUDE_WARM_WATER, DEFAULT_INCLUDE_WARM_WATER
-                    ),
+                _required_key(
+                    CONF_INCLUDE_WARM_WATER, DEFAULT_INCLUDE_WARM_WATER
                 ): selector.BooleanSelector(),
-                vol.Required(
-                    CONF_WARM_WATER_PERCENT,
-                    default=defaults.get(
-                        CONF_WARM_WATER_PERCENT, DEFAULT_WARM_WATER_PERCENT
-                    ),
+                _required_key(
+                    CONF_WARM_WATER_PERCENT, DEFAULT_WARM_WATER_PERCENT
                 ): selector.NumberSelector(
                     selector.NumberSelectorConfig(min=0, max=100, step=1)
                 ),
-                vol.Required(
-                    CONF_CALCULATION_METHOD,
-                    default=defaults.get(
-                        CONF_CALCULATION_METHOD, DEFAULT_CALCULATION_METHOD
-                    ),
+                _required_key(
+                    CONF_CALCULATION_METHOD, DEFAULT_CALCULATION_METHOD
                 ): selector.SelectSelector(
                     SelectSelectorConfig(
                         options=list(CALCULATION_METHODS.keys()),
@@ -123,4 +116,3 @@ class HeatCalculatorOptionsFlow(config_entries.OptionsFlow):
             data_schema=HeatCalculatorConfigFlow._build_schema(defaults),
             errors=errors,
         )
-
