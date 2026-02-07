@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DOCUMENTATION_URL, DOMAIN
 
@@ -16,5 +16,4 @@ def build_device_info(entry: ConfigEntry) -> DeviceInfo:
         manufacturer="HA Heat Calculator",
         model="Heat Allocation",
         configuration_url=DOCUMENTATION_URL,
-        entry_type=DeviceEntryType.SERVICE,
     )
