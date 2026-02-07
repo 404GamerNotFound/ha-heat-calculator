@@ -30,6 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         manufacturer=device_info.manufacturer,
         model=device_info.model,
         configuration_url=device_info.configuration_url,
+        entry_type=device_info.entry_type,
     )
     coordinator = HeatCalculatorCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
