@@ -70,6 +70,10 @@ class HeaterGasShareSensor(CoordinatorEntity[HeatCalculatorCoordinator], SensorE
             "heater_entity": self._heater_entity_id,
             "gas_meter_entity": self.coordinator.gas_meter_entity_id,
             "calculation_method": self.coordinator.calculation_method,
+            "heater_area": self.coordinator.heater_areas.get(self._heater_entity_id),
+            "heater_output_watt": self.coordinator.heater_outputs.get(
+                self._heater_entity_id
+            ),
             "effort_window": round(self.coordinator.data[self._heater_entity_id].effort_window, 3),
             "last_delta_gas": round(self.coordinator.last_delta_gas, 6),
             "last_distributable_gas": round(self.coordinator.last_distributable_gas, 6),

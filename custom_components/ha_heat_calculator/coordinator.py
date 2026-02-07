@@ -17,6 +17,8 @@ from .const import (
     CONF_GAS_METER_ENTITY,
     CONF_GAS_PRICE,
     CONF_HEATERS,
+    CONF_HEATER_AREAS,
+    CONF_HEATER_OUTPUTS,
     CONF_INCLUDE_WARM_WATER,
     CONF_WARM_WATER_PERCENT,
     DEFAULT_CALCULATION_METHOD,
@@ -85,6 +87,14 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
                 entry.data.get(CONF_WARM_WATER_PERCENT, DEFAULT_WARM_WATER_PERCENT),
             )
         )
+        self.heater_areas = self._sanitize_heater_mapping(
+            entry.options.get(CONF_HEATER_AREAS, entry.data.get(CONF_HEATER_AREAS, {}))
+        )
+        self.heater_outputs = self._sanitize_heater_mapping(
+            entry.options.get(
+                CONF_HEATER_OUTPUTS, entry.data.get(CONF_HEATER_OUTPUTS, {})
+            )
+        )
         self.calculation_method = entry.options.get(
             CONF_CALCULATION_METHOD,
             entry.data.get(CONF_CALCULATION_METHOD, DEFAULT_CALCULATION_METHOD),
@@ -128,6 +138,32 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
             return DEFAULT_GAS_PRICE
 
         return max(0.0, price)
+
+    @staticmethod
+    def _sanitize_heater_mapping(values: Any) -> dict[str, float]:
+        """Convert a heater mapping to a safe float dictionary."""
+        if not isinstance(values, dict):
+            return {}
+
+        sanitized: dict[str, float] = {}
+        for key, raw_value in values.items():
+            try:
+                value = float(raw_value)
+            except (TypeError, ValueError):
+                continue
+            if value <= 0:
+                continue
+            sanitized[str(key)] = value
+
+        return sanitized
+
+    def _heater_area_factor(self, heater_entity_id: str) -> float:
+        """Return the heater area factor or 1.0 if not configured."""
+        return self.heater_areas.get(heater_entity_id, 1.0)
+
+    def _heater_output_factor(self, heater_entity_id: str) -> float:
+        """Return the heater output factor or 1.0 if not configured."""
+        return self.heater_outputs.get(heater_entity_id, 1.0)
 
     async def _async_update_data(self) -> dict[str, HeaterStats]:
         """Collect heating effort and distribute gas increments."""
@@ -187,7 +223,12 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
             if self.calculation_method == "runtime_temp_weighted":
                 effort_factor = self._temperature_weight(state.attributes)
 
-            heater_stats.effort_window += elapsed_seconds * effort_factor
+            heater_stats.effort_window += (
+                elapsed_seconds
+                * effort_factor
+                * self._heater_area_factor(heater_entity_id)
+                * self._heater_output_factor(heater_entity_id)
+            )
 
     @staticmethod
     def _is_heating_active(state_value: str, attributes: dict) -> bool:
