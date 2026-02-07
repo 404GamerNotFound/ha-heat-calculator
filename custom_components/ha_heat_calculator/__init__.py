@@ -25,12 +25,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     device_info = build_device_info(entry)
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers=device_info.identifiers,
-        name=device_info.name,
-        manufacturer=device_info.manufacturer,
-        model=device_info.model,
-        configuration_url=device_info.configuration_url,
-        entry_type=device_info.entry_type,
+        **device_info,
     )
     coordinator = HeatCalculatorCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
