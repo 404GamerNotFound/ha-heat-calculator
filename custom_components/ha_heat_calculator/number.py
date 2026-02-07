@@ -4,12 +4,18 @@ from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfVolume
+from homeassistant.const import UnitOfArea, UnitOfPower, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_GAS_PRICE, CONF_WARM_WATER_PERCENT, DOMAIN
+from .const import (
+    CONF_GAS_PRICE,
+    CONF_HEATER_AREAS,
+    CONF_HEATER_OUTPUTS,
+    CONF_WARM_WATER_PERCENT,
+    DOMAIN,
+)
 from .coordinator import HeatCalculatorCoordinator
 from .device import build_device_info
 
@@ -29,12 +35,15 @@ async def async_setup_entry(
         gas_unit = UnitOfVolume.CUBIC_METERS
 
     currency = hass.config.currency or "EUR"
-    async_add_entities(
-        [
-            WarmWaterPercentNumber(coordinator, entry),
-            GasPriceNumber(coordinator, entry, gas_unit, currency),
-        ]
-    )
+    entities = [
+        WarmWaterPercentNumber(coordinator, entry),
+        GasPriceNumber(coordinator, entry, gas_unit, currency),
+    ]
+    for heater_entity_id in coordinator.heaters:
+        entities.append(HeaterAreaNumber(coordinator, entry, heater_entity_id))
+        entities.append(HeaterOutputNumber(coordinator, entry, heater_entity_id))
+
+    async_add_entities(entities)
 
 
 class WarmWaterPercentNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity):
@@ -98,3 +107,85 @@ class GasPriceNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity)
     async def async_set_native_value(self, value: float) -> None:
         """Set gas price."""
         await self.coordinator.async_update_options({CONF_GAS_PRICE: round(float(value), 4)})
+
+
+class HeaterAreaNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity):
+    """Number entity to control the heated area per heater."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:ruler-square"
+    _attr_native_min_value = 0
+    _attr_native_max_value = 1000
+    _attr_native_step = 0.1
+    _attr_mode = "box"
+    _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
+
+    def __init__(
+        self,
+        coordinator: HeatCalculatorCoordinator,
+        entry: ConfigEntry,
+        heater_entity_id: str,
+    ) -> None:
+        """Initialize number."""
+        super().__init__(coordinator)
+        self._heater_entity_id = heater_entity_id
+        self._attr_unique_id = f"{entry.entry_id}_{heater_entity_id}_heated_area"
+        heater_name = heater_entity_id.split(".", maxsplit=1)[-1].replace("_", " ").title()
+        self._attr_name = f"{heater_name} Heated Area"
+        self._attr_device_info = build_device_info(entry)
+
+    @property
+    def native_value(self) -> float:
+        """Return configured heated area."""
+        return round(self.coordinator.heater_areas.get(self._heater_entity_id, 0.0), 2)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set heated area."""
+        area = float(value)
+        updated = dict(self.coordinator.heater_areas)
+        if area <= 0:
+            updated.pop(self._heater_entity_id, None)
+        else:
+            updated[self._heater_entity_id] = round(area, 2)
+        await self.coordinator.async_update_options({CONF_HEATER_AREAS: updated})
+
+
+class HeaterOutputNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity):
+    """Number entity to control heater output in watts."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:flash"
+    _attr_native_min_value = 0
+    _attr_native_max_value = 100000
+    _attr_native_step = 1
+    _attr_mode = "box"
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+
+    def __init__(
+        self,
+        coordinator: HeatCalculatorCoordinator,
+        entry: ConfigEntry,
+        heater_entity_id: str,
+    ) -> None:
+        """Initialize number."""
+        super().__init__(coordinator)
+        self._heater_entity_id = heater_entity_id
+        self._attr_unique_id = f"{entry.entry_id}_{heater_entity_id}_heater_output"
+        heater_name = heater_entity_id.split(".", maxsplit=1)[-1].replace("_", " ").title()
+        self._attr_name = f"{heater_name} Heater Output"
+        self._attr_device_info = build_device_info(entry)
+
+    @property
+    def native_value(self) -> float:
+        """Return configured heater output."""
+        return round(self.coordinator.heater_outputs.get(self._heater_entity_id, 0.0), 1)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set heater output."""
+        output = float(value)
+        updated = dict(self.coordinator.heater_outputs)
+        if output <= 0:
+            updated.pop(self._heater_entity_id, None)
+        else:
+            updated[self._heater_entity_id] = round(output, 1)
+        await self.coordinator.async_update_options({CONF_HEATER_OUTPUTS: updated})

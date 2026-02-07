@@ -11,6 +11,8 @@ CONF_INCLUDE_WARM_WATER = "include_warm_water"
 CONF_WARM_WATER_PERCENT = "warm_water_percent"
 CONF_CALCULATION_METHOD = "calculation_method"
 CONF_GAS_PRICE = "gas_price"
+CONF_HEATER_AREAS = "heater_areas"
+CONF_HEATER_OUTPUTS = "heater_outputs"
 
 DEFAULT_INCLUDE_WARM_WATER = False
 DEFAULT_WARM_WATER_PERCENT = 20.0
