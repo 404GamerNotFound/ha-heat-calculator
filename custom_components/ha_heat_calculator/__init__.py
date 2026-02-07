@@ -9,6 +9,7 @@ from homeassistant.helpers import device_registry as dr
 
 from .coordinator import HeatCalculatorCoordinator
 from .const import DOMAIN
+from .device import build_device_info
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
@@ -21,12 +22,14 @@ PLATFORMS: list[Platform] = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up HA Heat Calculator from a config entry."""
     device_registry = dr.async_get(hass)
+    device_info = build_device_info(entry)
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, entry.entry_id)},
-        name=entry.title,
-        manufacturer="HA Heat Calculator",
-        model="Heat Allocation",
+        identifiers=device_info.identifiers,
+        name=device_info.name,
+        manufacturer=device_info.manufacturer,
+        model=device_info.model,
+        configuration_url=device_info.configuration_url,
     )
     coordinator = HeatCalculatorCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "ha_heat_calculator"
+DOCUMENTATION_URL = "https://github.com/404GamerNotFound/ha-heat-calculator"
 
 CONF_GAS_METER_ENTITY = "gas_meter_entity"
 CONF_HEATERS = "heaters"

@@ -5,12 +5,12 @@ from __future__ import annotations
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import HeatCalculatorCoordinator
+from .device import build_device_info
 
 
 async def async_setup_entry(
@@ -50,12 +50,7 @@ class HeaterGasShareSensor(CoordinatorEntity[HeatCalculatorCoordinator], SensorE
         heater_name = heater_entity_id.split(".", maxsplit=1)[-1].replace("_", " ").title()
         self._attr_name = f"{heater_name} Gas Consumption"
         self._attr_native_unit_of_measurement = native_unit
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=entry.title,
-            manufacturer="HA Heat Calculator",
-            model="Heat Allocation",
-        )
+        self._attr_device_info = build_device_info(entry)
 
     @property
     def native_value(self) -> float:
