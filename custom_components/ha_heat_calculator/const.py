@@ -10,10 +10,12 @@ CONF_HEATERS = "heaters"
 CONF_INCLUDE_WARM_WATER = "include_warm_water"
 CONF_WARM_WATER_PERCENT = "warm_water_percent"
 CONF_CALCULATION_METHOD = "calculation_method"
+CONF_GAS_PRICE = "gas_price"
 
 DEFAULT_INCLUDE_WARM_WATER = False
 DEFAULT_WARM_WATER_PERCENT = 20.0
 DEFAULT_CALCULATION_METHOD = "runtime_temp_weighted"
+DEFAULT_GAS_PRICE = 0.0
 
 CALCULATION_METHODS = {
     "runtime_only": "Runtime only",
