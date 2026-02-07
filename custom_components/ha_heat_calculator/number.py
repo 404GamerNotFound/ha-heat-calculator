@@ -7,6 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfArea, UnitOfPower, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
@@ -46,7 +47,9 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class WarmWaterPercentNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity):
+class WarmWaterPercentNumber(
+    CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity, RestoreEntity
+):
     """Number entity to control warm water percentage."""
 
     _attr_has_entity_name = True
@@ -60,8 +63,25 @@ class WarmWaterPercentNumber(CoordinatorEntity[HeatCalculatorCoordinator], Numbe
     def __init__(self, coordinator: HeatCalculatorCoordinator, entry: ConfigEntry) -> None:
         """Initialize number."""
         super().__init__(coordinator)
+        self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_warm_water_percent"
         self._attr_device_info = build_device_info(entry)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last stored value when options are missing."""
+        await super().async_added_to_hass()
+        if CONF_WARM_WATER_PERCENT in self._entry.options:
+            return
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        try:
+            value = float(last_state.state)
+        except (TypeError, ValueError):
+            return
+        await self.coordinator.async_update_options(
+            {CONF_WARM_WATER_PERCENT: round(value, 2)}
+        )
 
     @property
     def native_value(self) -> float:
@@ -75,7 +95,9 @@ class WarmWaterPercentNumber(CoordinatorEntity[HeatCalculatorCoordinator], Numbe
         )
 
 
-class GasPriceNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity):
+class GasPriceNumber(
+    CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity, RestoreEntity
+):
     """Number entity to control the gas price per cubic meter."""
 
     _attr_has_entity_name = True
@@ -95,9 +117,24 @@ class GasPriceNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity)
     ) -> None:
         """Initialize number."""
         super().__init__(coordinator)
+        self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_gas_price"
         self._attr_device_info = build_device_info(entry)
         self._attr_native_unit_of_measurement = f"{currency}/{gas_unit}"
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last stored value when options are missing."""
+        await super().async_added_to_hass()
+        if CONF_GAS_PRICE in self._entry.options:
+            return
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        try:
+            value = float(last_state.state)
+        except (TypeError, ValueError):
+            return
+        await self.coordinator.async_update_options({CONF_GAS_PRICE: round(value, 4)})
 
     @property
     def native_value(self) -> float:
@@ -109,7 +146,9 @@ class GasPriceNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity)
         await self.coordinator.async_update_options({CONF_GAS_PRICE: round(float(value), 4)})
 
 
-class HeaterAreaNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity):
+class HeaterAreaNumber(
+    CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity, RestoreEntity
+):
     """Number entity to control the heated area per heater."""
 
     _attr_has_entity_name = True
@@ -128,11 +167,30 @@ class HeaterAreaNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntit
     ) -> None:
         """Initialize number."""
         super().__init__(coordinator)
+        self._entry = entry
         self._heater_entity_id = heater_entity_id
         self._attr_unique_id = f"{entry.entry_id}_{heater_entity_id}_heated_area"
         heater_name = heater_entity_id.split(".", maxsplit=1)[-1].replace("_", " ").title()
         self._attr_name = f"{heater_name} Heated Area"
         self._attr_device_info = build_device_info(entry)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last stored value when options are missing."""
+        await super().async_added_to_hass()
+        if self._heater_entity_id in self.coordinator.heater_areas:
+            return
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        try:
+            value = float(last_state.state)
+        except (TypeError, ValueError):
+            return
+        if value <= 0:
+            return
+        updated = dict(self.coordinator.heater_areas)
+        updated[self._heater_entity_id] = round(value, 2)
+        await self.coordinator.async_update_options({CONF_HEATER_AREAS: updated})
 
     @property
     def native_value(self) -> float:
@@ -150,7 +208,9 @@ class HeaterAreaNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntit
         await self.coordinator.async_update_options({CONF_HEATER_AREAS: updated})
 
 
-class HeaterOutputNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity):
+class HeaterOutputNumber(
+    CoordinatorEntity[HeatCalculatorCoordinator], NumberEntity, RestoreEntity
+):
     """Number entity to control heater output in watts."""
 
     _attr_has_entity_name = True
@@ -169,11 +229,30 @@ class HeaterOutputNumber(CoordinatorEntity[HeatCalculatorCoordinator], NumberEnt
     ) -> None:
         """Initialize number."""
         super().__init__(coordinator)
+        self._entry = entry
         self._heater_entity_id = heater_entity_id
         self._attr_unique_id = f"{entry.entry_id}_{heater_entity_id}_heater_output"
         heater_name = heater_entity_id.split(".", maxsplit=1)[-1].replace("_", " ").title()
         self._attr_name = f"{heater_name} Heater Output"
         self._attr_device_info = build_device_info(entry)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last stored value when options are missing."""
+        await super().async_added_to_hass()
+        if self._heater_entity_id in self.coordinator.heater_outputs:
+            return
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        try:
+            value = float(last_state.state)
+        except (TypeError, ValueError):
+            return
+        if value <= 0:
+            return
+        updated = dict(self.coordinator.heater_outputs)
+        updated[self._heater_entity_id] = round(value, 1)
+        await self.coordinator.async_update_options({CONF_HEATER_OUTPUTS: updated})
 
     @property
     def native_value(self) -> float:
