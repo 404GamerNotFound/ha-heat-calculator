@@ -2,11 +2,11 @@
   "domain": "ha_heat_calculator",
   "name": "HA Heat Calculator",
   "version": "0.1.1",
-  "documentation": "https://github.com/maintainer/ha-heat-calculator",
-  "issue_tracker": "https://github.com/maintainer/ha-heat-calculator/issues",
+  "documentation": "https://github.com/404GamerNotFound/ha-heat-calculator",
+  "issue_tracker": "https://github.com/404GamerNotFound/ha-heat-calculator/issues",
   "dependencies": [],
   "codeowners": [
-    "@maintainer"
+    "@404GamerNotFound"
   ],
   "integration_type": "integration",
   "config_flow": true,

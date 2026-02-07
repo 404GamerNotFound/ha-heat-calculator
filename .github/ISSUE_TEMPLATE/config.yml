@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Community support
+    url: https://www.home-assistant.io/help/
+    about: Please ask questions here if you need help or have general support requests.
