@@ -59,6 +59,7 @@ async def async_get_config_entry_diagnostics(
             "calculation_method": coordinator.calculation_method,
             "include_warm_water": coordinator.include_warm_water,
             "warm_water_percent": coordinator.warm_water_percent,
+            "gas_price": coordinator.gas_price,
             "last_delta_gas": coordinator.last_delta_gas,
             "last_distributable_gas": coordinator.last_distributable_gas,
             "last_warm_water_deducted": coordinator.last_warm_water_deducted,

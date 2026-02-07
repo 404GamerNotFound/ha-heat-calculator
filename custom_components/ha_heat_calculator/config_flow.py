@@ -13,10 +13,12 @@ from .const import (
     CALCULATION_METHODS,
     CONF_CALCULATION_METHOD,
     CONF_GAS_METER_ENTITY,
+    CONF_GAS_PRICE,
     CONF_HEATERS,
     CONF_INCLUDE_WARM_WATER,
     CONF_WARM_WATER_PERCENT,
     DEFAULT_CALCULATION_METHOD,
+    DEFAULT_GAS_PRICE,
     DEFAULT_INCLUDE_WARM_WATER,
     DEFAULT_WARM_WATER_PERCENT,
     DOMAIN,
@@ -81,6 +83,9 @@ class HeatCalculatorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         mode="dropdown",
                         translation_key=CONF_CALCULATION_METHOD,
                     )
+                ),
+                _required_key(CONF_GAS_PRICE, DEFAULT_GAS_PRICE): selector.NumberSelector(
+                    selector.NumberSelectorConfig(min=0, max=100, step=0.01)
                 ),
             }
         )

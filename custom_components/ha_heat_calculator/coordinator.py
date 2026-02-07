@@ -15,10 +15,12 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_CALCULATION_METHOD,
     CONF_GAS_METER_ENTITY,
+    CONF_GAS_PRICE,
     CONF_HEATERS,
     CONF_INCLUDE_WARM_WATER,
     CONF_WARM_WATER_PERCENT,
     DEFAULT_CALCULATION_METHOD,
+    DEFAULT_GAS_PRICE,
     DEFAULT_INCLUDE_WARM_WATER,
     DEFAULT_WARM_WATER_PERCENT,
     DOMAIN,
@@ -87,6 +89,11 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
             CONF_CALCULATION_METHOD,
             entry.data.get(CONF_CALCULATION_METHOD, DEFAULT_CALCULATION_METHOD),
         )
+        self.gas_price = self._sanitize_gas_price(
+            entry.options.get(
+                CONF_GAS_PRICE, entry.data.get(CONF_GAS_PRICE, DEFAULT_GAS_PRICE)
+            )
+        )
 
         existing = self.data or {}
         self.data = {
@@ -111,6 +118,16 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
             return DEFAULT_WARM_WATER_PERCENT
 
         return min(MAX_WARM_WATER_PERCENT, max(MIN_WARM_WATER_PERCENT, percent))
+
+    @staticmethod
+    def _sanitize_gas_price(value: Any) -> float:
+        """Convert and clamp the gas price to a safe numeric value."""
+        try:
+            price = float(value)
+        except (TypeError, ValueError):
+            return DEFAULT_GAS_PRICE
+
+        return max(0.0, price)
 
     async def _async_update_data(self) -> dict[str, HeaterStats]:
         """Collect heating effort and distribute gas increments."""

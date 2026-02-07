@@ -9,7 +9,8 @@
           "heaters": "Heater entities",
           "include_warm_water": "Warm water runs on the same gas boiler",
           "warm_water_percent": "Warm water gas percentage",
-          "calculation_method": "Calculation method"
+          "calculation_method": "Calculation method",
+          "gas_price": "Gas price per m³"
         }
       }
     },
@@ -26,7 +27,8 @@
           "heaters": "Heater entities",
           "include_warm_water": "Warm water runs on the same gas boiler",
           "warm_water_percent": "Warm water gas percentage",
-          "calculation_method": "Calculation method"
+          "calculation_method": "Calculation method",
+          "gas_price": "Gas price per m³"
         }
       }
     },
