@@ -8,6 +8,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.selector import SelectSelectorConfig
+from homeassistant.loader import async_get_integration
 
 from .const import (
     CALCULATION_METHODS,
@@ -40,9 +41,15 @@ class HeatCalculatorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_create_entry(title="Heat Calculator", data=user_input)
 
+        defaults = user_input or {}
+        if CONF_GAS_PRICE not in defaults:
+            energy_price = await self._async_get_energy_gas_price()
+            if energy_price is not None:
+                defaults = {**defaults, CONF_GAS_PRICE: energy_price}
+
         return self.async_show_form(
             step_id="user",
-            data_schema=self._build_schema(user_input),
+            data_schema=self._build_schema(defaults),
             errors=errors,
         )
 
@@ -116,8 +123,42 @@ class HeatCalculatorOptionsFlow(config_entries.OptionsFlow):
                 return self.async_create_entry(title="", data=user_input)
 
         defaults = user_input or {**self.config_entry.data, **self.config_entry.options}
+        if CONF_GAS_PRICE not in defaults:
+            energy_price = await self._async_get_energy_gas_price()
+            if energy_price is not None:
+                defaults = {**defaults, CONF_GAS_PRICE: energy_price}
         return self.async_show_form(
             step_id="init",
             data_schema=HeatCalculatorConfigFlow._build_schema(defaults),
             errors=errors,
         )
+
+    async def _async_get_energy_gas_price(self) -> float | None:
+        """Return the fixed gas price from the Energy dashboard if configured."""
+        try:
+            await async_get_integration(self.hass, "energy")
+            from homeassistant.components.energy.data import async_get_manager
+        except (ImportError, ValueError):
+            return None
+
+        manager = await async_get_manager(self.hass)
+        preferences = await manager.async_get_energy_preferences()
+        energy_sources = preferences.get("energy_sources") if preferences else None
+        if not energy_sources:
+            return None
+
+        for source in energy_sources:
+            if source.get("type") != "gas":
+                continue
+            cost = source.get("cost")
+            if not cost or cost.get("type") != "fixed":
+                continue
+            value = cost.get("value")
+            if value is None:
+                continue
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
+        return None
