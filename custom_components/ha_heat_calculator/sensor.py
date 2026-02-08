@@ -7,6 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -36,7 +37,9 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class HeaterGasShareSensor(CoordinatorEntity[HeatCalculatorCoordinator], SensorEntity):
+class HeaterGasShareSensor(
+    CoordinatorEntity[HeatCalculatorCoordinator], SensorEntity, RestoreEntity
+):
     """Gas share sensor for one heater entity."""
 
     _attr_has_entity_name = True
@@ -57,6 +60,21 @@ class HeaterGasShareSensor(CoordinatorEntity[HeatCalculatorCoordinator], SensorE
         self._attr_name = f"{heater_name} Gas Consumption"
         self._attr_native_unit_of_measurement = native_unit
         self._attr_device_info = build_device_info(entry)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last stored allocation after restart."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        try:
+            value = float(last_state.state)
+        except (TypeError, ValueError):
+            return
+        heater_stats = self.coordinator.data.get(self._heater_entity_id)
+        if heater_stats is None:
+            return
+        heater_stats.total_allocated = max(0.0, value)
 
     @property
     def native_value(self) -> float:
@@ -84,7 +102,9 @@ class HeaterGasShareSensor(CoordinatorEntity[HeatCalculatorCoordinator], SensorE
         }
 
 
-class HeaterGasCostSensor(CoordinatorEntity[HeatCalculatorCoordinator], SensorEntity):
+class HeaterGasCostSensor(
+    CoordinatorEntity[HeatCalculatorCoordinator], SensorEntity, RestoreEntity
+):
     """Cost sensor for one heater entity."""
 
     _attr_has_entity_name = True
@@ -107,6 +127,25 @@ class HeaterGasCostSensor(CoordinatorEntity[HeatCalculatorCoordinator], SensorEn
         self._attr_name = f"{heater_name} Gas Cost"
         self._attr_native_unit_of_measurement = currency
         self._attr_device_info = build_device_info(entry)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last stored cost value after restart."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        try:
+            last_cost = float(last_state.state)
+        except (TypeError, ValueError):
+            return
+        heater_stats = self.coordinator.data.get(self._heater_entity_id)
+        if heater_stats is None:
+            return
+        if heater_stats.total_allocated > 0:
+            return
+        if self.coordinator.gas_price <= 0:
+            return
+        heater_stats.total_allocated = max(0.0, last_cost / self.coordinator.gas_price)
 
     @property
     def native_value(self) -> float:
