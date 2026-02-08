@@ -34,6 +34,7 @@ async def async_setup_entry(
     for heater_entity_id in coordinator.heaters:
         entities.append(HeaterGasShareSensor(coordinator, entry, heater_entity_id, native_unit))
         entities.append(HeaterGasCostSensor(coordinator, entry, heater_entity_id, currency))
+    entities.append(WarmWaterGasShareSensor(coordinator, entry, native_unit))
     async_add_entities(entities)
 
 
@@ -152,3 +153,56 @@ class HeaterGasCostSensor(
         """Return the calculated gas cost."""
         allocated = self.coordinator.data[self._heater_entity_id].total_allocated
         return round(allocated * self.coordinator.gas_price, 3)
+
+
+class WarmWaterGasShareSensor(
+    CoordinatorEntity[HeatCalculatorCoordinator], SensorEntity, RestoreEntity
+):
+    """Gas share sensor for warm water consumption."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:water-boiler"
+
+    def __init__(
+        self,
+        coordinator: HeatCalculatorCoordinator,
+        entry: ConfigEntry,
+        native_unit: str | None,
+    ) -> None:
+        """Initialize sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_warm_water_allocated_gas"
+        self._attr_name = "Warm Water Gas Consumption"
+        self._attr_native_unit_of_measurement = native_unit
+        self._attr_device_info = build_device_info(entry)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the last stored allocation after restart."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        try:
+            value = float(last_state.state)
+        except (TypeError, ValueError):
+            return
+        if self.coordinator.warm_water_total_allocated <= 0:
+            self.coordinator.warm_water_total_allocated = max(0.0, value)
+
+    @property
+    def native_value(self) -> float:
+        """Return allocated warm water gas consumption."""
+        return round(self.coordinator.warm_water_total_allocated, 3)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | float | None]:
+        """Return additional metadata for transparency."""
+        return {
+            "gas_meter_entity": self.coordinator.gas_meter_entity_id,
+            "include_warm_water": self.coordinator.include_warm_water,
+            "warm_water_percent": self.coordinator.warm_water_percent,
+            "last_warm_water_deducted": round(self.coordinator.last_warm_water_deducted, 6),
+            "last_distribution_time": None
+            if self.coordinator.last_distribution_time is None
+            else self.coordinator.last_distribution_time.isoformat(),
+        }
