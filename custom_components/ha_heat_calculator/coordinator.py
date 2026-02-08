@@ -57,6 +57,7 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
         self.last_distributable_gas: float = 0.0
         self.last_warm_water_deducted: float = 0.0
         self.last_distribution_time: datetime | None = None
+        self.warm_water_total_allocated: float = 0.0
 
         super().__init__(
             hass,
@@ -280,6 +281,8 @@ class HeatCalculatorCoordinator(DataUpdateCoordinator[dict[str, HeaterStats]]):
             distributable = delta_gas * (1 - (self.warm_water_percent / 100.0))
         self.last_distributable_gas = distributable
         self.last_warm_water_deducted = max(delta_gas - distributable, 0.0)
+        if self.last_warm_water_deducted > 0:
+            self.warm_water_total_allocated += self.last_warm_water_deducted
         self.last_distribution_time = dt_util.utcnow()
 
         if distributable <= 0:
