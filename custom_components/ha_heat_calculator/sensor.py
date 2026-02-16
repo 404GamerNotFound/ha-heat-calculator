@@ -10,7 +10,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
 from .coordinator import HeatCalculatorCoordinator
 from .device import build_device_info
 
@@ -21,7 +20,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up gas allocation sensors from a config entry."""
-    coordinator: HeatCalculatorCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: HeatCalculatorCoordinator = entry.runtime_data
     gas_state = hass.states.get(coordinator.gas_meter_entity_id)
     native_unit = None if gas_state is None else gas_state.attributes.get("unit_of_measurement")
     if native_unit == "m3":

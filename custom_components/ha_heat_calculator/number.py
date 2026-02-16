@@ -15,7 +15,6 @@ from .const import (
     CONF_HEATER_AREAS,
     CONF_HEATER_OUTPUTS,
     CONF_WARM_WATER_PERCENT,
-    DOMAIN,
 )
 from .coordinator import HeatCalculatorCoordinator
 from .device import build_device_info
@@ -27,7 +26,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up number entities from a config entry."""
-    coordinator: HeatCalculatorCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: HeatCalculatorCoordinator = entry.runtime_data
     gas_state = hass.states.get(coordinator.gas_meter_entity_id)
     gas_unit = None if gas_state is None else gas_state.attributes.get("unit_of_measurement")
     if gas_unit == "m3":
