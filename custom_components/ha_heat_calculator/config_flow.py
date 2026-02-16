@@ -142,8 +142,13 @@ async def _async_get_energy_gas_price(hass) -> float | None:
     except (ImportError, IntegrationNotFound, ValueError):
         return None
 
-    manager = await async_get_manager(hass)
-    preferences = await manager.async_get_energy_preferences()
+    try:
+        manager = await async_get_manager(hass)
+        preferences = await manager.async_get_energy_preferences()
+    except Exception:  # noqa: BLE001
+        # Never fail the config flow because Energy preferences are unavailable.
+        return None
+
     energy_sources = preferences.get("energy_sources") if preferences else None
     if not energy_sources:
         return None
