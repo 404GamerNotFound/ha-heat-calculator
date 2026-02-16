@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_INCLUDE_WARM_WATER, DOMAIN
+from .const import CONF_INCLUDE_WARM_WATER
 from .coordinator import HeatCalculatorCoordinator
 from .device import build_device_info
 
@@ -19,7 +19,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up switch entities from a config entry."""
-    coordinator: HeatCalculatorCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: HeatCalculatorCoordinator = entry.runtime_data
     async_add_entities([IncludeWarmWaterSwitch(coordinator, entry)])
 
 
